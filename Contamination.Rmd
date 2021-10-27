@@ -1,0 +1,96 @@
+---
+title: "CISProject"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(gifski)
+library(urbnmapr)
+library(gganimate)
+library(sf)
+library(transformr)
+library(lubridate)
+Cont <- read_excel(here::here('~/CIS661/WITHCONT.xlsx'))
+Plotting <- read_csv(here::here('~/CIS661/WITHCONT.csv'))
+Plotting <- Plotting %>% 
+  mutate(actualTime = dmy_hms(time))
+SampleData <- Plotting %>% 
+  filter(day(actualTime)==1) %>% 
+  mutate(CharCont = ifelse(contamination==1, "C",
+                           ifelse(contamination==0, "N", "no"))) %>% 
+  mutate(minute=minute(actualTime)) %>% 
+  mutate(hour=hour(actualTime)) %>% 
+  arrange(hour, minute) %>% 
+  mutate(plotTime=100*hour+minute)
+```
+
+```{r}
+SampleData %>% 
+  group_by(bikeid) %>% 
+  ggplot(aes(x=start_station_latitude, y=start_station_longitude, color=CharCont))+
+   geom_point()+
+   theme_linedraw()+
+   transition_states(hour(starttime), 5, 5) + 
+   ease_aes('cubic-in-out')
+```
+
+```{r}
+library(plotly)
+library(gapminder)
+p <- SampleData %>%
+  filter(plotTime<200) %>% 
+  plot_ly(
+    x = ~latitude, 
+    y = ~longitude,
+    color = ~CharCont, 
+    frame = ~plotTime, 
+    text = ~bikeid, 
+    hoverinfo = "bikeid",
+    type = 'scatter',
+    mode = 'markers'
+  ) %>%
+  layout(
+    xaxis = list(
+      type = "log"
+    )
+  )
+p
+#try fifteen minute increments, plot where bike is
+#just plot contaminated over days
+
+```
+
+```{r dailyData}
+library(plotly)
+newPlotting <- Plotting %>% 
+  group_by(dayNum=day(dmy_hms(time)), station_name, latitude, longitude) %>% 
+  mutate(dailyCont=sum(contamination))
+
+newPlotting <- newPlotting %>% 
+  distinct() %>% 
+  group_by(station_name) %>% 
+  mutate(cont=cumsum(dailyCont)) %>% 
+  ungroup()
+
+newPlotting <- newPlotting %>% 
+  filter(station_name!="NULL") 
+
+newPlotting %>% 
+  filter(dayNum==30) %>% 
+  ggplot(aes(x=latitude, y=longitude, color=cont))+ 
+  geom_point() 
+
+```
+
+
+
+
+
+
+
+
