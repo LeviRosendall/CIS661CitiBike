@@ -15,8 +15,7 @@ library(gganimate)
 library(sf)
 library(transformr)
 library(lubridate)
-Cont <- read_excel(here::here('~/CIS661/WITHCONT.xlsx'))
-Plotting <- read_csv(here::here('~/CIS661/WITHCONT.csv'))
+Plotting <- read_csv(here::here('~/CIS661/CIS661CitiBike/WITHCONT.csv'))
 Plotting <- Plotting %>% 
   mutate(actualTime = dmy_hms(time))
 SampleData <- Plotting %>% 
