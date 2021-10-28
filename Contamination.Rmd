@@ -29,15 +29,7 @@ SampleData <- Plotting %>%
   mutate(plotTime=100*hour+minute)
 ```
 
-```{r}
-SampleData %>% 
-  group_by(bikeid) %>% 
-  ggplot(aes(x=start_station_latitude, y=start_station_longitude, color=CharCont))+
-   geom_point()+
-   theme_linedraw()+
-   transition_states(hour(starttime), 5, 5) + 
-   ease_aes('cubic-in-out')
-```
+
 
 ```{r}
 library(plotly)
@@ -68,27 +60,91 @@ p
 ```{r dailyData}
 library(plotly)
 newPlotting <- Plotting %>% 
-  group_by(dayNum=day(dmy_hms(time)), station_name, latitude, longitude) %>% 
-  mutate(dailyCont=sum(contamination))
+  group_by(station_name, dayNum=day(dmy_hms(time))) %>% 
+  arrange(station_name, dayNum) %>% 
+  mutate(dailyCont=sum(contamination)) %>% 
+  select(-time, -bikeid, -actualTime) %>% 
+  distinct()
 
-newPlotting <- newPlotting %>% 
-  distinct() %>% 
+plotTable <- newPlotting %>% 
   group_by(station_name) %>% 
   mutate(cont=cumsum(dailyCont)) %>% 
   ungroup()
 
-newPlotting <- newPlotting %>% 
+plotTable <- plotTable %>% 
   filter(station_name!="NULL") 
 
-newPlotting %>% 
-  filter(dayNum==30) %>% 
-  ggplot(aes(x=latitude, y=longitude, color=cont))+ 
-  geom_point() 
-
+plotTableLastDay <- plotTable%>% 
+  filter(dayNum==30)
 ```
 
 
+```{r}
+library(leaflet)
 
+# define bounding box with longitude/latitude coordinates
+bbox <- list(
+  p1 = list(long = -74.02, lat = 40.6),
+  p2 = list(long = -73.94, lat = 40.78)
+)
+
+nycimage <- leaflet() %>%
+  addTiles() %>% 
+  addRectangles(
+    lng1 = bbox$p1$long, lat1 = bbox$p1$lat,
+    lng2 = bbox$p2$long, lat2 = bbox$p2$lat,
+    fillColor = "transparent"
+  ) %>%
+  fitBounds(
+    lng1 = bbox$p1$long, lat1 = bbox$p1$lat,
+    lng2 = bbox$p2$long, lat2 = bbox$p2$lat,
+  )
+
+define_image_size <- function(bbox, major_dim = 400) {
+  # calculate aspect ration (width/height) from lat/long bounding box
+  aspect_ratio <- abs((bbox$p1$long - bbox$p2$long) / (bbox$p1$lat - bbox$p2$lat))
+  # define dimensions
+  img_width <- ifelse(aspect_ratio > 1, major_dim, major_dim*aspect_ratio) %>% round()
+  img_height <- ifelse(aspect_ratio < 1, major_dim, major_dim/aspect_ratio) %>% round()
+  size_str <- paste(img_width, img_height, sep = ",")
+  list(height = img_height, width = img_width, size = size_str)
+}
+
+
+image_size <- define_image_size(bbox, major_dim = 600)
+image_size
+library(devtools)
+library(htmlwidgets)
+library(mapview)
+webshot::install_phantomjs()
+mapshot(nycimage, file = "~/CIS661/CIS661CitiBike/nycimage.png")
+```
+
+
+```{r}
+library(png)
+
+img <- readPNG("~/CIS661/CIS661CitiBike/nycimage.png") 
+
+h<-dim(img)[1] # image height
+w<-dim(img)[2] # image width
+
+library(rayshader)
+mtplot = ggplot(plotTableLastDay) +
+  geom_point(aes(x = latitude, y = longitude, color = cont)) +
+  scale_color_continuous(limits = c(0, 160))
+mtplot
+
+par(mfrow = c(1, 2))
+plot_gg(mtplot, width = 3.5, raytrace = FALSE, preview = TRUE)
+
+plot_gg(mtplot, width = 3.5, multicore = TRUE, windowsize = c(800, 800),
+        zoom = 0.85, phi = 35, theta = 30, sunangle = 225, soliddepth = -100)
+
+render_snapshot(clear = TRUE)
+
+
+```
 
 
 
