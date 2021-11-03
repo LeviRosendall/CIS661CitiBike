@@ -150,6 +150,12 @@ render_snapshot(clear = TRUE)
 
 ```{r cleanOneStation}
 #cleaning W 20 St & 11 Ave
+Plotting %>% 
+  arrange(bikeid, time) %>% 
+  group_by(bikeid) %>% 
+  mutate(temp=1) %>% 
+  mutate(numEntries=ave(temp, FUN=cumsum))
+
 cleanOnePlotting <- Plotting %>%
   arrange(bikeid, time) %>% 
   group_by(bikeid) %>% 
