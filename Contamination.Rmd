@@ -150,9 +150,9 @@ render_snapshot(clear = TRUE)
 
 ```{r cleanOneStation}
 #cleaning W 20 St & 11 Ave
-cleaningTime=0
-cleanOnePlotting <- Plotting %>% 
+cleanOnePlotting <- Plotting %>%
   arrange(bikeid, time) %>% 
+  group_by(bikeid) %>% 
   mutate(numEntries=ave(bikeid/bikeid, FUN=cumsum)) %>% 
   mutate(contFlag=contamination) %>% 
   mutate(contFlag=ifelse(station_name=="W 20 St & 11 Ave", 10, contFlag)) %>% 
@@ -169,7 +169,7 @@ newCleanOnePlotting <- cleanOnePlotting %>%
   group_by(station_name, dayNum=day(dmy_hms(time))) %>% 
   arrange(station_name, dayNum) %>% 
   mutate(dailyCont=sum(contamination)) %>% 
-  select(-time, -bikeid, -actualTime) %>% 
+  select(-time, -bikeid, -actualTime, -numEntries, -contamination, -isCleaned) %>% 
   distinct()
 
 cleanOnePlotTable <- newCleanOnePlotting %>% 
