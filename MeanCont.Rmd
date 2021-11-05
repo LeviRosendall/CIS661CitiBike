@@ -1,0 +1,108 @@
+---
+title: "BikeMean"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(lubridate)
+Plotting <- read_csv(here::here('~/CIS661/CIS661CitiBike/WITHCONT (1).csv'))
+Plotting <- Plotting %>% 
+  arrange(bikeid, time) %>% 
+  group_by(bikeid) %>% 
+  mutate(numEntries=ave(bikeid/bikeid, FUN=cumsum))
+Plotting <- Plotting %>% 
+  mutate(starting=ifelse(numEntries==1, 1, 0))
+Station_names <- Plotting %>% 
+  filter(station_name=="1 Ave & E 16 St") %>% 
+  group_by(station_name) %>% 
+  summarise(sum()) %>% 
+  pull(station_name)
+Plotting <- Plotting %>%
+  select(bikeid, station_name, time, starting)
+
+```
+
+```{r}
+totalContamination=c()
+cleanedContamination=c()
+
+for (station in Station_names){
+  ContPlotting <- Plotting %>% 
+    mutate(contaminated=ifelse(starting==1 & station_name==station, 1, 0)) %>% 
+    select(bikeid, contaminated)
+  
+  newContPlotting <- left_join(Plotting, ContPlotting, by='bikeid')
+  
+  newPlotting <- newContPlotting %>% 
+  filter(contaminated==1) %>% 
+  group_by(station_name, dayNum=day(dmy_hms(time))) %>% 
+  arrange(station_name, dayNum) %>% 
+  mutate(dailyCont=sum(contaminated)) %>% 
+  distinct()
+  
+  plotTable <- newPlotting %>% 
+  group_by(station_name) %>% 
+  mutate(cont=cumsum(dailyCont)) %>% 
+  ungroup()
+
+  plotTable <- plotTable %>% 
+    filter(station_name!="NULL") 
+
+  plotTableLastDay <- plotTable%>% 
+    filter(dayNum==30)
+  
+  oneStation=plotTableLastDay %>% 
+    summarise(sum(cont))
+  
+  totalContamination <- c(totalContamination, oneStation)
+  
+  cleanOnePlotting <- newContPlotting %>%
+    arrange(bikeid, time) %>% 
+    group_by(bikeid) %>%  
+    mutate(contFlag=contaminated) %>% 
+    mutate(contFlag=ifelse(station_name=="W 20 St & 11 Ave", 10, contFlag)) %>% 
+    mutate(isCleaned=cumsum(contFlag))
+  
+  cleanOnePlotting <- cleanOnePlotting %>% 
+    mutate(contaminated=ifelse(isCleaned>numEntries, 0, contaminated))
+  
+  newCleanOnePlotting <- cleanOnePlotting %>% 
+    filter(contaminated==1) %>% 
+    group_by(station_name, dayNum=day(dmy_hms(time))) %>% 
+    arrange(station_name, dayNum) %>% 
+    mutate(dailyCont=sum(contaminated)) %>% 
+    distinct()
+
+  cleanOnePlotTable <- newCleanOnePlotting %>% 
+    group_by(station_name) %>% 
+    mutate(cont=cumsum(dailyCont)) %>% 
+    ungroup()
+
+  cleanOnePlotTable <- cleanOnePlotTable %>% 
+    filter(station_name!="NULL") 
+
+  cleanOnePlotTableLastDay <- cleanOnePlotTable%>% 
+    filter(dayNum==30)
+  
+  oneCleanStation=cleanOnePlotTableLastDay %>% 
+    summarise(sum(cont))
+  
+  cleanedContamination <- c(cleanedContamination, oneCleanStation)
+}
+```
+
+
+
+
+
+
+
+
+
+
+
