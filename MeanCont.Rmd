@@ -29,7 +29,6 @@ Plotting <- Plotting %>%
 
 ```{r}
 totalContamination=c()
-cleanedContamination=c()
 
 for (station in Station_names){
   ContPlotting <- Plotting %>% 
@@ -60,6 +59,21 @@ for (station in Station_names){
     summarise(sum(cont))
   
   totalContamination <- c(totalContamination, oneStation)
+  
+  
+}
+```
+
+
+```{r}
+cleanedContamination=c()
+
+for (station in Station_names){
+ContPlotting <- Plotting %>% 
+    mutate(contaminated=ifelse(starting==1 & station_name==station, 1, 0)) %>% 
+    select(bikeid, contaminated)
+  
+  newContPlotting <- left_join(Plotting, ContPlotting, by='bikeid')
   
   cleanOnePlotting <- newContPlotting %>%
     arrange(bikeid, time) %>% 
@@ -95,8 +109,6 @@ for (station in Station_names){
   cleanedContamination <- c(cleanedContamination, oneCleanStation)
 }
 ```
-
-
 
 
 
