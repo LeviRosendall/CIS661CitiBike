@@ -18,12 +18,12 @@ Plotting <- Plotting %>%
 Plotting <- Plotting %>% 
   mutate(starting=ifelse(numEntries==1, 1, 0))
 Station_names <- Plotting %>% 
-  filter(station_name=="1 Ave & E 16 St") %>% 
+ # filter(station_name=="1 Ave & E 16 St") %>% 
   group_by(station_name) %>% 
   summarise(sum()) %>% 
   pull(station_name)
 Plotting <- Plotting %>%
-  select(bikeid, station_name, time, starting)
+  select(bikeid, station_name, time, starting, numEntries)
 
 ```
 
@@ -33,6 +33,7 @@ totalContamination=c()
 for (station in Station_names){
   ContPlotting <- Plotting %>% 
     mutate(contaminated=ifelse(starting==1 & station_name==station, 1, 0)) %>% 
+    filter(contaminated==1) %>% 
     select(bikeid, contaminated)
   
   newContPlotting <- left_join(Plotting, ContPlotting, by='bikeid')
@@ -69,9 +70,9 @@ for (station in Station_names){
 cleanedContamination=c()
 
 for (station in Station_names){
-  rm("CleanContPlotting", "newContPlotting", "newCleanOnePlotting", "cleanOnePlotTable","cleanOnePlotTableLastDay")
   CleanContPlotting <- Plotting %>% 
-    mutate(contaminated=ifelse(starting==1 & station_name=="1 Ave & E 16 St", 1, 0)) %>% 
+    mutate(contaminated=ifelse(starting==1 & station_name==station, 1, 0)) %>% 
+    filter(contaminated==1) %>% 
     select(bikeid, contaminated)
   
   newContPlotting <- left_join(Plotting, CleanContPlotting, by='bikeid')
@@ -111,6 +112,25 @@ for (station in Station_names){
 }
 ```
 
+
+```{r}
+totalContamination2 <- unlist(totalContamination)
+cleanedContamination2 <- unlist(cleanedContamination)
+diffTable <- data.frame(noClean=totalContamination, Clean=cleanedContamination2)
+diffTable <- diffTable %>% 
+  mutate(difference=ifelse(noClean>0, (noClean-Clean)/noClean, 1)) 
+
+
+```
+
+```{r}
+library(infer)
+set.seed(661)
+many_diff <- replicate(1000, sample(diffTable$difference, size=nrow(diffTable), replace=TRUE), simplify=FALSE)
+meansDiff <- map_dbl(many_diff, mean)
+
+quantile(meansDiff, probs=c(0.05, 0.95))
+```
 
 
 
