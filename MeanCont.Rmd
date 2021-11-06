@@ -118,7 +118,8 @@ totalContamination2 <- unlist(totalContamination)
 cleanedContamination2 <- unlist(cleanedContamination)
 diffTable <- data.frame(noClean=totalContamination, Clean=cleanedContamination2)
 diffTable <- diffTable %>% 
-  mutate(difference=ifelse(noClean>0, (noClean-Clean)/noClean, 1)) 
+  filter(noClean>0) %>% 
+  mutate(difference=(noClean-Clean)/noClean) 
 
 
 ```
