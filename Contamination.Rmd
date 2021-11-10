@@ -133,7 +133,8 @@ w<-dim(img)[2] # image width
 library(rayshader)
 mtplot = ggplot(plotTableLastDay) +
   geom_point(aes(x = latitude, y = longitude, color = cont)) +
-  scale_color_continuous(limits = c(0, 120))
+  scale_color_continuous(limits = c(0, 120))+
+  scale_x_continuous(breaks=c(40.65, 40.7, 40.75))
 mtplot
 
 par(mfrow = c(1, 2))
@@ -195,7 +196,8 @@ cleanOnePlotTableLastDay <- cleanOnePlotTable%>%
 ```{r}
 mtplotcleanone = ggplot(cleanOnePlotTableLastDay) +
   geom_point(aes(x = latitude, y = longitude, color = cont)) +
-  scale_color_continuous(limits = c(0, 120))
+  scale_color_continuous(limits = c(0, 120))+
+  scale_x_continuous(breaks=c(40.65, 40.7, 40.75))
 mtplotcleanone
 
 par(mfrow = c(1, 2))
