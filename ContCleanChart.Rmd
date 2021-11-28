@@ -1,0 +1,28 @@
+This should work after the for loop code in MeanCont.Rmd
+
+```{r}
+
+library(viridis)
+#install.packages("hrbrthemes")
+library(hrbrthemes)
+
+totalContamination <- unlist(totalContamination)
+cleanedContamination <- unlist(cleanedContamination)
+diff <- data.frame(station_name = Station_names, no_cleaning = totalContamination, with_cleaning = cleanedContamination)
+
+diff2 <- diff %>% 
+  pivot_longer(!station_name, names_to = "Cleaning_Status", values_to = "Contaminated_Bikes") %>% 
+  mutate(Cleaning_Status = case_when( Cleaning_Status == "no_cleaning" ~ "Not Cleaned", TRUE ~ "Cleaned"))
+
+png("cleaning.png")
+head(diff2) %>%
+  arrange(desc(Contaminated_Bikes)) %>% 
+  ggplot(aes(fill = Cleaning_Status, y = Contaminated_Bikes, x = station_name))+
+  geom_bar(position="stack", stat="identity", width = .66)+
+  scale_fill_viridis(discrete = T, option = "turbo") +
+  theme_bw()+
+  labs(title = "Contaminated Bikes Per Station\n in Cleaned vs. Not Cleaned State", x = "Station Name", y = "Contamined Bikes", fill = "Cleaning Status")+
+  coord_flip()
+dev.off()
+
+```
